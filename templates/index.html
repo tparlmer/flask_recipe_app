@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Recipes</h1>
+    <p>Debug: recipes variable type: {{ recipes.__class__.__name__ }}</p>
+    <p>Debug: recipes length: {{ recipes|length if recipes else 'N/A' }}</p>
+    {% if recipes %}
+        <p>Number of recipes: {{ recipes|length }}</p>
+        <ul>
+        {% for recipe in recipes %}
+            <li>{{ recipe['name'] }} (ID: {{ recipe['id'] }})</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No recipes found</p>
+    {% endif %}
+    <h2>Raw Recipe Data:</h2>
+    <pre>{{ recipes }}</pre>
+{% endblock %}
