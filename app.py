@@ -1,56 +1,88 @@
-from flask import Flask, render_template
-import sqlite3
+from flask import (
+    Flask, render_template, redirect, request
+)
+from recipe_model import Recipe
 
 app = Flask(__name__)
 
-def get_db_connection():
-    try:
-        conn = sqlite3.connect('database.db')
-        conn.row_factory = sqlite3.Row
-        print("Database connection successful")
-        return conn
-    except Exception as e:
-        print(f"Databse connection failed: {e}")
-        return None
+# =============================================================================
+# ROUTES
+# =============================================================================
 
-# Currently going to show all data in the database as a test
+# HOME
 @app.route('/')
 def index():
-    print("Index route hit")
-    conn = get_db_connection()
-    if conn is None:
-        return "Database connection failed", 500
+    return redirect("/recipes")
+
+# GETS ALL RECIPES
+@app.route("/recipes")
+def recipes():
+    search = request.args.get("q")
+    if search is not None:
+        # search method is defined in Recipe class
+        recipes_set = Recipe.search(search)
+    else:
+        # TODO - define all() method in Recipe class
+        recipes_set = Recipe.all()
+    return render_template("index.html", recipes=recipes_set)
+
+# GETS NEW RECIPE FORM
+@app.route("/recipes/new", methods=["GET"])
+def recipes_new_get():
+    return render_template("new.html", recipe=Recipe()) # Recipe() constructs a new Recipe object
+
+# POSTS NEW RECIPE DATA TO DATABASE
+@app.route("/recipes/new", methods=["POST"])
+def recipes_new():
+    recipe = Recipe(
+        #TODO - need to generate new ID
+        name=request.form["name"],
+        additional=request.form["additional"],
+        ingredients=request.form["ingredients"],
+        instructions=request.form["instructions"],
+        tags=request.form["tags"]
+    )
+    if recipe.save():
+        return redirect("/recipes")
+    else:
+        return render_template("new.html", recipe=recipe)
+
+# GETS RECIPE BY ID
+@app.route("/recipes/<recipe_id>")
+def recipes_view(recipe_id=0):
+    recipe = Recipe.find(recipe_id)
+    return render_template("show.html", recipe=recipe)
+
+# GET EDIT RECIPE
+@app.route("/recipes/<recipe_id>/edit", methods=["GET"])
+def recipes_edit_get(recipe_id=0):
+    recipe = Recipe.find(recipe_id)
+    return render_template("edit.html", recipe=recipe)
+
+# POST EDIT RECIPE
+@app.route("/recipes/<recipe_id>/edit", methods=["POST"])
+def recipes_edit_post(recipe_id=0):
+    r = Recipe.find(recipe_id)
+    #TODO - Fix below code
+    r.update(
+        name=request.form["name"],
+        additional=request.form["additional"],
+        ingredients=request.form["ingredients"],
+        instructions=request.form["instructions"],
+        tags=request.form["tags"]
+    )
+    if r.save():
+        return redirect(f"/recipes/{recipe_id}")
+    else:
+        return render_template("edit.html", recipe=r)
     
-    cursor = conn.cursor()
-    try:
-        print("Executing SQL Query")
-        cursor.execute('SELECT * FROM Recipes')
-        recipes = cursor.fetchall()
-        print(f"Query executed, fetched {len(recipes)} recipes")
-        
-        # Print each recipe
-        for recipe in recipes:
-            print(f"Recipe: {dict(recipe)}")
+# DELETE RECIPE
+@app.route("/recipes/<recipe_id>/delete", methods=["POST"])
+def recipes_delete(recipe_id=0):
+    r = Recipe.find(recipe_id)
+    r.delete()
+    return redirect("/recipes")
 
-        print(f"Passing to template: {recipes}")
-
-    except Exception as e:
-        print(f"Error executing query: {e}")
-        return "Database query failed", 500
-    finally:
-        conn.close()
-    
-    return render_template('index.html', recipes=recipes)
-
-# Show Recipe route
-# @app.route('/recipe/<int:recipe_id>')
-# def show_recipe(recipe_id):
-
-# New Recipe route
-
-# Edit Recipe route
-
-# Delete Recipe route
 
 if __name__ == '__main__':
     app.run(debug=True)

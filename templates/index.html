@@ -1,19 +1,33 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Recipes</h1>
-    <p>Debug: recipes variable type: {{ recipes.__class__.__name__ }}</p>
-    <p>Debug: recipes length: {{ recipes|length if recipes else 'N/A' }}</p>
-    {% if recipes %}
-        <p>Number of recipes: {{ recipes|length }}</p>
-        <ul>
-        {% for recipe in recipes %}
-            <li>{{ recipe['name'] }} (ID: {{ recipe['id'] }})</li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>No recipes found</p>
-    {% endif %}
-    <h2>Raw Recipe Data:</h2>
-    <pre>{{ recipes }}</pre>
+    
+    <form action="/recipes" method="get" class="tool-bar">
+        <label for="search">Search Term</label>
+        <input id="search" type="search" name="q" value="{{ request.args.get('q') or '' }}"/>
+        <input type="submit" value="Search"/>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for recipe in recipes %}
+                <tr>
+                    <td><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></td>
+                    <td>{{ recipe.description }}</td>
+                    <td><a href="/recipes/{{ recipe.id }}/edit">Edit</a>
+                    <a href="/recipes/{{ recipe.id }}/view">View</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>
+        <a href="/recipes/new">Add New Recipe</a>
+    </p>
 {% endblock %}
