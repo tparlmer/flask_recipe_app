@@ -2,12 +2,28 @@
 
 {% block content %}
     <h1>{{ recipe.name }}</h1>
-    <p>{{ recipe.description }}</p>
-    <p>{{ recipe.ingredients }}</p>
-    <p>{{ recipe.instructions }}</p>
+    
+    {% if recipe.description %}
+        <h2>Description:</h2>
+        <p>{{ recipe.description }}</p>
+    {% endif %}
+    
+    <h2>Ingredients:</h2>
+    <ul>
+    {% for ingredient in recipe.ingredients %}
+        <li>{{ ingredient.quantity }} {{ ingredient.ingredient }}</li>
+    {% endfor %}
+    </ul>
+
+    <h2>Instructions:</h2>
+    <ol>
+    {% for step in recipe.instructions %}
+        <li>{{ step }}</li>
+    {% endfor %}
+    </ol>
 
     <p>
         <a href="/recipes/{{ recipe.id }}/edit">Edit</a>
         <a href="/recipes">Back</a>
-
+    </p>
 {% endblock %}

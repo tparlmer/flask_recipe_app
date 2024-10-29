@@ -11,8 +11,8 @@ INSERT INTO Recipes (name, additional, author_id) VALUES
 
 -- Insert ingredients
 INSERT INTO Ingredients (recipe_id, ingredient, quantity) VALUES 
-(1, 'Uncut chicken wings', '1lbs'),
-(1, 'Nandos', '100g'),
+(1, 'Uncut chicken wings', '1 lb'),
+(1, 'Nandos sauce', '100g'),
 (1, 'Tomato sauce', '1 cup'),
 (2, 'Cucumber', '1 full cucumber'),
 (2, 'Red onion', '1/4 red onion'),
@@ -21,11 +21,11 @@ INSERT INTO Ingredients (recipe_id, ingredient, quantity) VALUES
 (2, 'Green pepper', '1/2 pepper'),
 (2, 'Salt', 'to taste'),
 (2, 'Pepper', 'to taste'),
-(3, 'Frozen Kale', 'to taste'),
-(3, 'Banana', '1 whole banana'),
-(3, 'frozen mango', 'to taste'),
-(3, 'greek yogurt', 'to taste'),
-(3, 'ginger', 'to taste');
+(3, 'Frozen kale', '2 cups'),
+(3, 'Banana', '1 medium'),
+(3, 'Frozen mango', '1 cup'),
+(3, 'Greek yogurt', '1/2 cup'),
+(3, 'Fresh ginger', '1 tbsp');
 
 -- Insert instructions
 INSERT INTO Instructions (recipe_id, step, instructions) VALUES 

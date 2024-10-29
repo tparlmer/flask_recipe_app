@@ -14,23 +14,68 @@
             <input name="description" id="description" type="text" placeholder="Recipe Description" value="{{ recipe.description or '' }}">
             <span class="error">{{ recipe.errors['description'] }}</span>
         </p>
-        <!-- TODO - Make below <p> work for multiple ingredients -->
-        <p>
-            <label for="ingredients">Ingredients</label>
-            <input name="ingredients" id="ingredients" type="text" placeholder="Recipe Ingredients" value="{{ recipe.ingredients or '' }}">
-            <span class="error">{{ recipe.errors['ingredients'] }}</span>
-        </p>
-        <!-- TODO - Make below <p> work for multiple instructions -->
-        <p>
-            <label for="instructions">Instructions</label>
-            <input name="instructions" id="instructions" type="text" placeholder="Recipe Instructions" value="{{ recipe.instructions or '' }}">
-            <span class="error">{{ recipe.errors['Instructions'] }}</span>
-        </p>
-        <button>Save</button>
+        <!-- Ingredients Section -->
+        <div id="ingredients-container">
+            <label>Ingredients</label>
+            {% for ingredient in recipe.ingredients %}
+            <div class="ingredient-item">
+                <input name="ingredients[]" type="text" placeholder="Ingredient" value="{{ ingredient }}">
+                <input name="quantities[]" type="text" placeholder="Quantity">
+                <button type="button" onclick="removeElement(this)">Remove</button>
+            </div>
+            {% endfor %}
+            <button type="button" onclick="addIngredient()">Add Ingredient</button>
+            </div>"
+        </div>
+
+        <!-- Instructions Section -->
+        <div id="instructions-container">
+            <label>Instructions</label>
+            {% for instruction in recipe.instructions %}
+            <div class="instruction-item">
+                <textarea name="instructions[]" placeholder="Instruction">{{ instruction }}</textarea>
+                <button type="button" onclick="removeElement(this)">Remove</button>
+            </div>
+            {% endfor %}
+            <button type="button" onclick="addInstruction()">Add Instruction</button>
+        </div>
+
+        <button type="submit">Save</button>
     </fieldset>
 </form>
 
 <p>
     <a href="/recipes">Back To Recipes</a>
 </p>
+
+<!-- JavaScript for Dynamic Fields -->
+<script>
+    function addIngredient() {
+        const container = document.getElementById('ingredients-container');
+        const ingredientDiv = document.createElement('div');
+        ingredientDiv.className = 'ingredient-item';
+        ingredientDiv.innerHTML = `
+            <input name="ingredients[]" type="text" placeholder="Ingredient">
+            <input name="quantities[]" type="text" placeholder="Quantity">
+            <button type="button" onclick="removeElement(this)">Remove</button>
+        `;
+        container.appendChild(ingredientDiv);
+    }
+
+    function addInstruction() {
+        const container = document.getElementById('instructions-container');
+        const instructionDiv = document.createElement('div');
+        instructionDiv.className = 'instruction-item';
+        instructionDiv.innerHTML = `
+            <textarea name="instructions[]" placeholder="Instruction"></textarea>
+            <button type="button" onclick="removeElement(this)">Remove</button>
+        `;
+        container.appendChild(instructionDiv);
+    }
+
+    function removeElement(button) {
+        button.parentElement.remove();
+    }
+</script>
+
 {% endblock %}

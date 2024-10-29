@@ -2,14 +2,14 @@
 
 CREATE TABLE IF NOT EXISTS Authors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS Recipes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     additional TEXT,
-    author_id INTEGER,
+    author_id INTEGER NOT NULL,
     FOREIGN KEY (author_id) REFERENCES Authors(id)
 );
 
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS Instructions (
 
 CREATE TABLE IF NOT EXISTS Tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tag TEXT NOT NULL
+    tag TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS Recipe_Tags (
@@ -41,3 +41,9 @@ CREATE TABLE IF NOT EXISTS Recipe_Tags (
     FOREIGN KEY (recipe_id) REFERENCES Recipes(id),
     FOREIGN KEY (tag_id) REFERENCES Tags(id)
 );
+
+CREATE INDEX idx_recipes_author ON Recipes(author_id);
+CREATE INDEX idx_ingredients_recipe ON Ingredients(recipe_id);
+CREATE INDEX idx_instructions_recipe ON Instructions(recipe_id);
+CREATE INDEX idx_recipe_tags_recipe ON Recipe_Tags(recipe_id);
+CREATE INDEX idx_recipe_tags_tag ON Recipe_Tags(tag_id);
