@@ -2,8 +2,10 @@ from flask import (
     Flask, render_template, redirect, request
 )
 from recipe_model import Recipe
+from config import Config
 
 app = Flask(__name__)
+app.config.from_object(Config)
 
 # =============================================================================
 # ROUTES
@@ -97,4 +99,4 @@ def recipes_delete(recipe_id=0):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)

@@ -1,4 +1,5 @@
-import sqlite3
+import psycopg2
+from psycopg2.extras import DictCursor
 
 # =============================================================================
 # Recipe Model
@@ -47,43 +48,39 @@ class Recipe:
         cursor = conn.cursor()
         try:
             # Start transaction
-            cursor.execute('BEGIN')
-
-            # Save or update recipe
+            # PostgreSQL syntax for RETURNING the id
             if self.id is None:
-                # Insert new recipe
                 cursor.execute('''
                     INSERT INTO Recipes (name, additional)
-                    VALUES (?, ?)
+                    VALUES (%s, %s)
+                    RETURNING id
                 ''', (self.name, self.additional))
-                self.id = cursor.lastrowid
+                self.id = cursor.fetchone()[0]
             else:
-                # Update existing recipe
                 cursor.execute('''
                     UPDATE Recipes 
-                    SET name = ?, additional = ?
-                    WHERE id = ?
+                    SET name = %s, additional = %s
+                    WHERE id = %s
                 ''', (self.name, self.additional, self.id))
 
             # Delete existing ingredients and instructions (for updates)
-            cursor.execute('DELETE FROM Ingredients WHERE recipe_id = ?', (self.id,))
-            cursor.execute('DELETE FROM Instructions WHERE recipe_id = ?', (self.id,))
+            cursor.execute('DELETE FROM Ingredients WHERE recipe_id = %s', (self.id,))
+            cursor.execute('DELETE FROM Instructions WHERE recipe_id = %s', (self.id,))
 
             # Save ingredients
             for ingredient in self.ingredients:
                 cursor.execute('''
                     INSERT INTO Ingredients (recipe_id, ingredient, quantity)
-                    VALUES (?, ?, ?)
+                    VALUES (%s, %s, %s)
                 ''', (self.id, ingredient['ingredient'], ingredient['quantity']))
 
             # Save instructions
             for i, instruction in enumerate(self.instructions):
                 cursor.execute('''
                     INSERT INTO Instructions (recipe_id, step, instructions)
-                    VALUES (?, ?, ?)
+                    VALUES (%s, %s, %s)
                 ''', (self.id, i + 1, instruction))
 
-            # Commit transaction
             conn.commit()
             return True
 
@@ -92,6 +89,7 @@ class Recipe:
             print(f"Error saving recipe: {e}")
             return False
         finally:
+            cursor.close()
             conn.close()
 
     @classmethod
@@ -106,7 +104,7 @@ class Recipe:
             cursor.execute('''
                 SELECT r.id, r.name, r.additional 
                 FROM Recipes r
-                WHERE r.id = ?
+                WHERE r.id = %s
             ''', (recipe_id,))
             recipe_data = cursor.fetchone()
             
@@ -117,7 +115,7 @@ class Recipe:
             cursor.execute('''
                 SELECT ingredient, quantity 
                 FROM Ingredients
-                WHERE recipe_id = ?
+                WHERE recipe_id = %s
             ''', (recipe_id,))
             ingredients = cursor.fetchall()
             
@@ -125,7 +123,7 @@ class Recipe:
             cursor.execute('''
                 SELECT instructions
                 FROM Instructions 
-                WHERE recipe_id = ?
+                WHERE recipe_id = %s
                 ORDER BY step
             ''', (recipe_id,))
             instructions = [row[0] for row in cursor.fetchall()]
@@ -160,11 +158,11 @@ class Recipe:
                 recipe_id = row[0]
                 
                 # Get ingredients for this recipe
-                cursor.execute('SELECT ingredient, quantity FROM Ingredients WHERE recipe_id = ?', (recipe_id,))
+                cursor.execute('SELECT ingredient, quantity FROM Ingredients WHERE recipe_id = %s', (recipe_id,))
                 ingredients = cursor.fetchall()
                 
                 # Get instructions for this recipe
-                cursor.execute('SELECT instructions FROM Instructions WHERE recipe_id = ? ORDER BY step', (recipe_id,))
+                cursor.execute('SELECT instructions FROM Instructions WHERE recipe_id = %s ORDER BY step', (recipe_id,))
                 instructions = [row[0] for row in cursor.fetchall()]
                 
                 # Create Recipe object
@@ -196,7 +194,7 @@ class Recipe:
                 SELECT r.id, r.name, r.additional, a.name 
                 FROM Recipes r
                 JOIN Authors a ON r.author_id = a.id
-                WHERE r.name LIKE ?
+                WHERE r.name LIKE %s
             ''', (f"%{search_term}%",))
             recipe_data = cursor.fetchall()
 
@@ -205,13 +203,13 @@ class Recipe:
                 recipe_id = row[0]
                 cursor.execute('''
                     SELECT ingredient, quantity FROM Ingredients
-                    WHERE recipe_id = ?
+                    WHERE recipe_id = %s
                 ''', (recipe_id,))
                 ingredients = cursor.fetchall()
 
                 cursor.execute('''
                     SELECT step, instructions FROM Instructions
-                    WHERE recipe_id = ?
+                    WHERE recipe_id = %s
                     ORDER BY step
                 ''', (recipe_id,))
                 instructions = cursor.fetchall()
@@ -219,7 +217,7 @@ class Recipe:
                 cursor.execute('''
                     SELECT t.tag FROM Tags t
                     JOIN Recipe_Tags rt ON t.id = rt.tag_id
-                    WHERE rt.recipe_id = ?
+                    WHERE rt.recipe_id = %s
                 ''', (recipe_id,))
                 tags = cursor.fetchall()
 
@@ -247,12 +245,17 @@ class Recipe:
     @staticmethod
     def get_db_connection():
         try:
-            conn = sqlite3.connect('database.db')
-            conn.row_factory = sqlite3.Row
+            conn = psycopg2.connect(
+                dbname="your_db_name",
+                user="your_user",
+                password="your_password",
+                host="localhost",
+                port="5432"
+            )
             print("Database connection successful")
             return conn
         except Exception as e:
-            print(f"Databse connection failed: {e}")
+            print(f"Database connection failed: {e}")
             return None
 
     @staticmethod
@@ -263,7 +266,7 @@ class Recipe:
 
         cursor = conn.cursor()
         try:
-            cursor.execute('SELECT * FROM Recipes WHERE id = ?', (recipe_id,))
+            cursor.execute('SELECT * FROM Recipes WHERE id = %s', (recipe_id,))
             recipes = cursor.fetchall()
             return recipes
         except Exception as e:
@@ -284,7 +287,7 @@ class Recipe:
             for recipe in Recipe.db.values():
                 cursor.execute('''
                     INSERT INTO Recipes (id, name, additional)
-                    VALUES (?, ?, ?)
+                    VALUES (%s, %s, %s)
                     ON CONFLICT(id) DO UPDATE SET
                         name = excluded.name,
                         additional = excluded.additional
@@ -306,11 +309,17 @@ class Recipe:
     def delete(self):
         """Delete this recipe from the database"""
         try:
-            with sqlite3.connect('database.db') as conn:
+            with psycopg2.connect(
+                dbname="your_db_name",
+                user="your_user",
+                password="your_password",
+                host="localhost",
+                port="5432"
+            ) as conn:
                 cursor = conn.cursor()
-                cursor.execute("DELETE FROM recipes WHERE id = ?", (self.id,))
+                cursor.execute("DELETE FROM recipes WHERE id = %s", (self.id,))
                 conn.commit()
                 return True
-        except sqlite3.Error as e:
+        except Exception as e:
             print(f"Error deleting recipe: {e}")
             return False
